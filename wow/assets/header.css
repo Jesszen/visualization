@@ -1,0 +1,22 @@
+.app-header {
+    height: 60px;
+    line-height: 60px;
+    border-bottom: thin lightgrey solid;
+}
+
+.app-header .app-header--title {
+    font-size: 22px;
+    padding-left: 5px;
+}
+.tablecontainer {display:table;}
+.tablerow {display:table-row;}
+.right_detail {display:table-cell;
+               padding:50px 20px 20px 40px;
+			   vertical-align:top;
+			   Height:500px;
+			   Width:450px;
+			   text-align:center;
+			 }
+.letf_map {display:table-cell;
+           padding:0px 20px 20px 40px;
+		   vertical-align:top}
