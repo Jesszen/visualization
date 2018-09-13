@@ -15,8 +15,6 @@ mysql_host='118.24.26.227'
 mysql_port=3306
 mysql_data='job'
 
-# NAME ='find job'
-# INFO ="找工作用的找工作程序——by 泛泛之素"
 colors = ["red","rgb(0,116,217)","rgb(255,65,54)","rgb(133,20,75)","rgb(255,133,27)","green","rgb(138 ,43, 226)","rgb(47 ,79 ,79)",
           "#26CC58", "#28C86D", "#29C481", "#2AC093", "#2BBCA4","#613099","#F4EC15", "#DAF017", "#BBEC19", "9DE81B"]
 
@@ -28,6 +26,51 @@ print(job_data.duplicated().sum())
 #+ job_data['education']+job_data['salary']+ '<br>'+job_data['applicate_person']
 job_data['makers_show_text']=(job_data['job']).astype(str) +'<br>'+(job_data['company']).astype(str)+'<br>' +job_data['education']+ '<br>'+job_data['salary']+\
                              '<br>'+job_data['job_url']+'<br>'+job_data['company_url']
+a=job_data.groupby(by='city').size()
+b=job_data['salary_1'].groupby(job_data['city']).mean()
+c=job_data['salary_2'].groupby(job_data['city']).mean()
+bar_data=pd.concat([a,b,c],axis=1)
+bar_data['city']=bar_data.index
+print(bar_data)
+
+
+def bar_figure(va=20):
+    s1=go.Bar(x=bar_data['city'][bar_data.iloc[:,0]>va].values,
+               y=bar_data['salary_1'][bar_data.iloc[:,0]>va].values,
+               name='salary_low',
+               marker=go.Marker(color='#66CC99')
+               )
+    s2=go.Bar(x=bar_data['city'][bar_data.iloc[:,0]>va].values,
+              y=bar_data['salary_2'][bar_data.iloc[:,0]>va].values,
+              name='salary_high',
+              marker=go.Marker(color='#99CC00')
+              )
+    data=[s1,s2]
+    #margin=Margin(l=0,b=0,r=0,t=0),#外边框,我们这个图片被div包裹，这里的margin相当于div内元素的margin
+    layout=Layout(title='不同城市的薪水区间',
+                  showlegend=True,
+                  legend=go.Legend(x=0,y=1),
+                  xaxis=dict(tickangle=0),
+                  barmode='group',
+                  )
+    return go.Figure(data=data,layout=layout)
+def pie_city(cou):
+    p1=go.Pie(labels=bar_data['city'][bar_data.iloc[:,0]>cou].values,
+              values=bar_data.iloc[:,0][bar_data.iloc[:,0]>cou].values,
+              hole=0.4,
+              type='pie',
+              hoverinfo="label+name+value",
+              name='city',
+              textposition='inside',
+              domain={'x':[0,1]}
+    )
+    data=[p1]
+    layout1=go.Layout(
+        title='城市职位数量',
+        annotations=[{'text':'job numbers','showarrow': False,'x':0.5,'y':0.5}]
+    )
+    return go.Figure(data=data,layout=layout1)
+
 
 app=dash.Dash()
 mapbox_accesstoken='pk.eyJ1IjoiamVzc3hsbCIsImEiOiJjamx3NnQya2cxMzBpM2ttZWZmNjRzcnR1In0.aTango7PURwrPEHRpl9liQ'
@@ -46,7 +89,7 @@ def get_figure(values):
                             hoverinfo="text",#设置标签悬停展示的内容【"lon", "lat", "text", "name", "name"】https://plot.ly/python/reference/#scattermapbox-hoverinfo
                             mode='markers',
                             #size大小对应像素，不宜过大；sizeref按照size大小比例缩放，sizemode，按照面积/直径
-                            marker=Marker(size=job_data['salary_1'].astype(int)/1000,color=colors[4],sizemin=5,sizeref=0.8,sizemode='area'),#设置标签大小依赖，和颜色
+                            marker=Marker(size=job_data['salary_1'].astype(int)/1000,color='#FF6600',sizemin=5,sizeref=0.8,sizemode='area'),#设置标签大小依赖，和颜色
                             text=job_data['makers_show_text'],#标签展示的内容
                             name='jess'
                             )])
@@ -59,8 +102,7 @@ def get_figure(values):
     layout=Layout(
         autosize=True,
         height=750,#地图长宽
-        width=1100,
-        #margin=Margin(l=10,b=10,r=20,t=20),#外边框
+        margin=Margin(l=0,b=0,r=0,t=0),#外边框
         hovermode='closest',#环绕方式，紧密
         #mapbox，填写mapbox的相关信息，以字典形式，包括token，style都要重mapbox网站获取
         mapbox=dict(
@@ -83,18 +125,31 @@ INFO="visual gongzuo"
 app.layout=html.Div([
     #建立一级标题
     #HTML标签对里的内容是通过children关键字参数指定的
-    html.H1(children='数据分析工作',
+    html.Div([
+    html.H1(children='数据分析职位',
             style={
             'textAlign': 'center',
-            'color': colors[5],
             'fontSize':'30px'
         }),
-    html.Div(children='查看全国是数据分析工作',
+    html.Div(children='全国数据分析职位分布',
              style={
         'textAlign': 'center',
-        'color': colors[5],
-        'fontSize':'18px'
-    }),
+        'fontSize':'18px'})],className='hhhh'),
+    html.Div([
+        dcc.Slider(
+            min=10,
+            max=100,
+            step=20,
+            value=20,
+            id='slider_jobs')],className='ddddss'),
+         html.Div([
+           html.Div([
+            html.Div(
+                dcc.Graph(
+                    id='city_pie'),className='city_pie'),
+            html.Div(
+               dcc.Graph(
+                 id='bar_salary'),className='bar_salary')],className='bar_pie')]),
     #建立复选框
     html.Div([
       dcc.Checklist(
@@ -103,7 +158,7 @@ app.layout=html.Div([
                    {'label':'其他','value':'house'}],
           #options中的值必须在values中
           values=['job','house'])],
-          className='twelve columns',style={'textAlign':'center','color':colors[6]}),
+          className='check1',style={'textAlign':'center'}),
     html.Div([
         html.Div([
                 html.Div([
@@ -188,6 +243,15 @@ def get_hover_title(hoverData):
     except:
         pass
 
+#获取城市数量
+@app.callback(Output('bar_salary','figure'),[Input('slider_jobs','value')])
+def bar_update(value):
+   return bar_figure(value)
+
+#获取城市数量pie
+@app.callback(Output('city_pie','figure'),[Input('slider_jobs','value')])
+def pie_update(value):
+   return pie_city(value)
 
 
 # external_css = ["https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
